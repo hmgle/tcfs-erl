@@ -12,7 +12,7 @@
                    {reuseaddr, true}]).
 
 %% External API
--export([start/0]).
+-export([start/1]).
 
 %% gen_listener_tcp callbacks
 -export([init/1,
@@ -24,27 +24,27 @@
          code_change/3]).
 
 %% @doc Start the server.
-start() ->
-    gen_listener_tcp:start({local, ?MODULE}, ?MODULE, [], []).
+start(RootPath) ->
+    gen_listener_tcp:start({local, ?MODULE}, ?MODULE, RootPath, []).
 
 %% @doc The tcfs client process.
-tcfs_client(Socket) ->
+tcfs_client(Socket, RootPath) ->
     error_logger:info_msg("client()~n"),
     ok = inet:setopts(Socket, [{active, once}]),
     receive
         {tcp, Socket, Data} ->
             error_logger:info_msg("Got Data: ~p", [Data]),
             gen_tcp:send(Socket, "TODO"),
-            tcfs_client(Socket);
+            tcfs_client(Socket, RootPath);
         {tcp_closed, Socket} ->
             error_logger:info_msg("Client Disconnected.")
     end.
 
-init([]) ->
-    {ok, {?TCP_PORT, ?TCP_OPTS}, nil}.
+init(RootPath) ->
+    {ok, {?TCP_PORT, ?TCP_OPTS}, RootPath}.
 
 handle_accept(Sock, State) ->
-    Pid = spawn(fun() -> tcfs_client(Sock) end),
+    Pid = spawn(fun() -> tcfs_client(Sock, State) end),
     gen_tcp:controlling_process(Sock, Pid),
     {noreply, State}.
 

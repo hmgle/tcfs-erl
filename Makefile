@@ -5,4 +5,4 @@ clean::
 	-rm -f ebin/*.beam
 
 run: all
-	erl -pa ebin -s tcfs_server
+	erl -pa ebin -s tcfs_server start "rootdir"
