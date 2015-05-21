@@ -84,8 +84,17 @@ msg_handler([RootPath], <<"getattr", Path/binary>>) ->
                       (?MODULE:datetime_to_epoch_time(Ctime)):32>>,
             {ok, Reply};
         {error, _Reason} ->
-            Reply = <<1:32, 0:320>>,
-            {ok, Reply}
+            {ok, <<1:32>>}
+    end;
+msg_handler([RootPath], <<"readdir", Path/binary>>) ->
+    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    case file:list_dir_all(FixPath) of
+        {ok, Filenames} ->
+            FileLists = lists:flatmap(fun(F) -> F ++ "\0" end, Filenames),
+            Reply = <<0:32, FileLists>>,
+            {ok, Reply};
+        {error, _Reason} ->
+            {ok, <<1:32>>}
     end;
 msg_handler(_RootPath, _) ->
     {error, badmsg}.
