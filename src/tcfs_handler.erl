@@ -1,6 +1,8 @@
 -module(tcfs_handler).
 -compile(export_all).
 
+-include_lib("kernel/include/file.hrl").
+
 getattr(Path) ->
     file:read_file_info(Path).
 
@@ -60,4 +62,31 @@ write(Path, Offset, _Size, Data) ->
 
 readdir(Path) ->
     file:list_dir_all(Path).
+
+%% see http://www.epochconverter.com/
+datetime_to_epoch_time(DateTime) ->
+    %% 62167219200 = 719528*24*3600 =
+    %%      calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}
+    calendar:datetime_to_gregorian_seconds(DateTime) - 62167219200.
+
+%% msg_handler(Msg) ->
+msg_handler([RootPath], <<"getattr", Path/binary>>) ->
+    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    case file:read_file_info(FixPath) of
+        {ok, FileInfo} ->
+            error_logger:info_msg("fileinfo: ~p", [FileInfo]),
+            #file_info{major_device=Dev, inode=Inode, mode=Mode, links=Nlink,
+                      uid=Uid, gid=Gid, size=Size, atime=Atime, mtime=Mtime,
+                      ctime=Ctime} = FileInfo,
+            Reply = <<0:32, Dev:32, Inode:32, Mode:32, Nlink:32, Uid:32, Gid:32,
+                      Size:32, (?MODULE:datetime_to_epoch_time(Atime)):32,
+                      (?MODULE:datetime_to_epoch_time(Mtime)):32,
+                      (?MODULE:datetime_to_epoch_time(Ctime)):32>>,
+            {ok, Reply};
+        {error, _Reason} ->
+            Reply = <<1:32, 0:320>>,
+            {ok, Reply}
+    end;
+msg_handler(_RootPath, _) ->
+    {error, badmsg}.
 

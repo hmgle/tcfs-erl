@@ -34,7 +34,12 @@ tcfs_client(Socket, RootPath) ->
     receive
         {tcp, Socket, Data} ->
             error_logger:info_msg("Got Data: ~p", [Data]),
-            gen_tcp:send(Socket, "TODO"),
+            case tcfs_handler:msg_handler(RootPath, Data) of
+                {ok, Reply} ->
+                    gen_tcp:send(Socket, Reply);
+                {error, Reason} ->
+                    error_logger:info_msg("error Reason: ~p", [Reason])
+            end,
             tcfs_client(Socket, RootPath);
         {tcp_closed, Socket} ->
             error_logger:info_msg("Client Disconnected.")
