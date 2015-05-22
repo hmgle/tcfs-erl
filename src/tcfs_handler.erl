@@ -91,7 +91,7 @@ msg_handler([RootPath], <<"readdir", Path/binary>>) ->
     case file:list_dir_all(FixPath) of
         {ok, Filenames} ->
             FileLists = lists:flatmap(fun(F) -> F ++ "\0" end, Filenames),
-            Reply = <<0:32, FileLists>>,
+            Reply = [<<0:32>>, FileLists],
             {ok, Reply};
         {error, _Reason} ->
             {ok, <<1:32>>}
