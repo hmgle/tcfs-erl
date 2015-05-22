@@ -38,6 +38,7 @@ tcfs_client(Socket, RootPath) ->
                 {ok, Reply} ->
                     gen_tcp:send(Socket, Reply);
                 {error, Reason} ->
+                    gen_tcp:send(Socket, <<-1:32>>),
                     error_logger:info_msg("error Reason: ~p", [Reason])
             end,
             tcfs_client(Socket, RootPath);
