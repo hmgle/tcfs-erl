@@ -102,15 +102,15 @@ msg_handler([RootPath], <<"open", Flags:32, Path/binary>>) ->
     Modes = parse_open_modes(Flags),
     case file:open(FixPath, Modes) of
         {ok, F} ->
-            Fid = gen_fd_index(),
-            FIndex = <<Fid:32>>,
+            FIndex = gen_fd_index(),
             put(FIndex, F),
-            Reply = [<<0:32>>, FIndex],
+            Reply = [<<0:32>>, <<FIndex:32>>],
+            error_logger:info_msg("open Findex: ~p~n", [FIndex]),
             {ok, Reply};
         {error, _Reasor} ->
             {ok, <<1:32>>}
     end;
-msg_handler([_RootPath], <<"read", FIndex:32, Size:32, Offset:32, _Path/binary>>) ->
+msg_handler([_RootPath], <<"read", FIndex:32, Offset:32, Size:32, _Path/binary>>) ->
     F = get(FIndex),
     case F of
         undefined ->
