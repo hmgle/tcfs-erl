@@ -102,13 +102,15 @@ msg_handler([RootPath], <<"open", Flags:32, Path/binary>>) ->
     Modes = parse_open_modes(Flags),
     case file:open(FixPath, Modes) of
         {ok, F} ->
-            FIndex = gen_fd_index(),
+            Fid = gen_fd_index(),
+            FIndex = <<Fid:32>>,
             put(FIndex, F),
-            Reply = [<<0:32>>, <<FIndex:32>>],
+            Reply = [<<0:32>>, FIndex],
             {ok, Reply};
         {error, _Reasor} ->
             {ok, <<1:32>>}
     end;
+% msg_handler([RootPath], <<"read", FIndex:32, Path/binary>>) ->
 msg_handler(_RootPath, _) ->
     {error, badmsg}.
 
