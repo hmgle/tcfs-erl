@@ -69,10 +69,11 @@ datetime_to_epoch_time(DateTime) ->
     %%      calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}
     calendar:datetime_to_gregorian_seconds(DateTime) - 62167219200.
 
-%% msg_handler(Msg) ->
+%% FIXME: check FixPath is the subdir of RootPath
 msg_handler([RootPath], <<"getattr", Path/binary>>) ->
     FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
     case file:read_file_info(FixPath) of
+        %% TODO: get st_blksize, st_blocks
         {ok, FileInfo} ->
             error_logger:info_msg("fileinfo: ~p", [FileInfo]),
             #file_info{major_device=Dev, inode=Inode, mode=Mode, links=Nlink,
@@ -96,6 +97,28 @@ msg_handler([RootPath], <<"readdir", Path/binary>>) ->
         {error, _Reason} ->
             {ok, <<1:32>>}
     end;
+msg_handler([RootPath], <<"open", Flags:32, Path/binary>>) ->
+    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    Modes = parse_open_modes(Flags),
+    case file:open(FixPath, Modes) of
+        {ok, F} ->
+            FIndex = gen_fd_index(),
+            put(FIndex, F),
+            Reply = [<<0:32>>, <<FIndex:32>>],
+            {ok, Reply};
+        {error, _Reasor} ->
+            {ok, <<1:32>>}
+    end;
 msg_handler(_RootPath, _) ->
     {error, badmsg}.
+
+gen_fd_index() ->
+    Ref = erlang:ref_to_list(erlang:make_ref()),
+    {match, RefList} = re:run(Ref, "\\d+", [global, {capture, all, binary}]),
+    [[_], [_], [_], [Ret]] = RefList,
+    erlang:binary_to_integer(Ret).
+
+parse_open_modes(_Flags) ->
+    %% TODO
+    [read].
 
