@@ -126,6 +126,19 @@ msg_handler([_RootPath], <<"read", FIndex:32, Offset:32, Size:32, _Path/binary>>
                     {ok, <<-1:32>>}
             end
     end;
+msg_handler([_RootPath], <<"write", FIndex:32, Offset:32, Size:32, Wbuf/binary>>) ->
+    F = get(FIndex),
+    case F of
+        undefined ->
+            {ok, <<-1:32>>};
+        _ ->
+            case file:pwrite(F, Offset, Wbuf) of
+                ok ->
+                    {ok, <<Size:32>>};
+                {error, _Reason} ->
+                    {ok, <<-1:32>>}
+            end
+    end;
 msg_handler(_RootPath, _) ->
     {error, badmsg}.
 
@@ -137,5 +150,5 @@ gen_fd_index() ->
 
 parse_open_modes(_Flags) ->
     %% TODO
-    [read, binary, raw].
+    [read, write, binary, raw].
 
