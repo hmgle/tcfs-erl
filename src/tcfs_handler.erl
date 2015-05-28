@@ -148,7 +148,23 @@ gen_fd_index() ->
     [[_], [_], [_], [Ret]] = RefList,
     erlang:binary_to_integer(Ret).
 
-parse_open_modes(_Flags) ->
-    %% TODO
-    [read, write, binary, raw].
+bit(Number, Bit) ->
+    (Number bsr Bit) band 1.
 
+parse_open_modes(Flags) ->
+    %% TODO
+    error_logger:info_msg("Flags: ~p", [Flags]),
+    RDONLY_or_WRONLY = ?MODULE:bit(Flags, 0),
+    IsRDWR = ?MODULE:bit(Flags, 1),
+    _IsCREAT = ?MODULE:bit(Flags, 6),
+    _IsTRUNC = ?MODULE:bit(Flags, 9),
+    _IsAPPEND = ?MODULE:bit(Flags, 10),
+    Modes = [binary, raw],
+    case RDONLY_or_WRONLY of
+        1 -> [write | Modes];
+        0 ->
+            case IsRDWR of
+                1 -> [read, write | Modes];
+                0 -> Modes
+            end
+    end.
