@@ -144,6 +144,19 @@ msg_handler([RootPath], <<"truncate", Newsize:32, Path/binary>>) ->
         {error, _Reason} ->
             {ok, <<-1:32>>}
     end;
+msg_handler([_RootPath], <<"release", FIndex:32>>) ->
+    F = get(FIndex),
+    case F of
+        undefined ->
+            {ok, <<-1:32>>};
+        _ ->
+            case file:close(F) of
+                ok ->
+                    {ok, <<0:32>>};
+                {error, _Reason} ->
+                    {ok, <<-1:32>>}
+            end
+    end;
 msg_handler(_RootPath, _) ->
     {error, badmsg}.
 
