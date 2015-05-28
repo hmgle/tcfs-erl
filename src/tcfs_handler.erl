@@ -3,9 +3,6 @@
 
 -include_lib("kernel/include/file.hrl").
 
-getattr(Path) ->
-    file:read_file_info(Path).
-
 readlink(Path) ->
     file:read_link_all(Path).
 
@@ -43,9 +40,6 @@ truncate(Path, Newsize) ->
 
 utime(Path, Mtime) ->
     file:change_time(Path, Mtime).
-
-open(_Path, _Mode) ->
-    ok.
 
 read(Path, Offset, Size) ->
     {ok, F} = file:open(Path, [read, binary, raw]),
