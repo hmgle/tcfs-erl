@@ -35,12 +35,9 @@ chown(Path, Uid, Gid) ->
     file:change_owner(Path, Uid, Gid).
 
 truncate(Path, Newsize) ->
-    %% FIXME
     {file_exists, true} = {file_exists, filelib:is_file(Path)},
     {ok, IO} = file:open(Path, [read, write]),
-    {ok, Max} = file:position(IO, eof),
-    {correct_size, true} = {correct_size, (Newsize < Max)},
-    {ok, Newsize} = file:position(IO, {bof, Newsize}),
+    {ok, _NewPosition} = file:position(IO, Newsize),
     ok = file:truncate(IO),
     file:close(IO).
 
@@ -139,6 +136,14 @@ msg_handler([_RootPath], <<"write", FIndex:32, Offset:32, Size:32, Wbuf/binary>>
                     {ok, <<-1:32>>}
             end
     end;
+msg_handler([RootPath], <<"truncate", Newsize:32, Path/binary>>) ->
+    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    case ?MODULE:truncate(FixPath, Newsize) of
+        ok ->
+            {ok, <<0:32>>};
+        {error, _Reason} ->
+            {ok, <<-1:32>>}
+    end;
 msg_handler(_RootPath, _) ->
     {error, badmsg}.
 
@@ -153,7 +158,6 @@ bit(Number, Bit) ->
 
 parse_open_modes(Flags) ->
     %% TODO
-    error_logger:info_msg("Flags: ~p", [Flags]),
     RDONLY_or_WRONLY = ?MODULE:bit(Flags, 0),
     IsRDWR = ?MODULE:bit(Flags, 1),
     _IsCREAT = ?MODULE:bit(Flags, 6),
