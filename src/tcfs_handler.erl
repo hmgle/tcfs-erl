@@ -158,6 +158,19 @@ msg_handler([_RootPath], <<"release", FIndex:32>>) ->
                     {ok, <<-9:32>>} % EBADF = 9
             end
     end;
+msg_handler([RootPath], <<"create", _Mode:32, Path/binary>>) ->
+    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    case file:open(FixPath, [raw, write, binary]) of
+        {ok, F} ->
+            FIndex = gen_fd_index(),
+            put(FIndex, F),
+            Reply = [<<0:32>>, <<FIndex:32>>],
+            error_logger:info_msg("create Findex: ~p~n", [FIndex]),
+            {ok, Reply};
+        {error, _Reasor} ->
+            %% TODO: get and send errno
+            {ok, <<-13:32>>} % EACCES = 13
+    end;
 msg_handler(_RootPath, _) ->
     {error, badmsg}.
 
