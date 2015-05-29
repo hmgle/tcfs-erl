@@ -76,7 +76,8 @@ msg_handler([RootPath], <<"getattr", Path/binary>>) ->
                       (?MODULE:datetime_to_epoch_time(Ctime)):32>>,
             {ok, Reply};
         {error, _Reason} ->
-            {ok, <<1:32>>}
+            %% TODO: get and send errno
+            {ok, <<-2:32>>} % ENOENT = 2
     end;
 msg_handler([RootPath], <<"readdir", Path/binary>>) ->
     FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
@@ -86,7 +87,8 @@ msg_handler([RootPath], <<"readdir", Path/binary>>) ->
             Reply = [<<0:32>>, FileLists],
             {ok, Reply};
         {error, _Reason} ->
-            {ok, <<1:32>>}
+            %% TODO: get and send errno
+            {ok, <<-9:32>>} % EBADF = 9
     end;
 msg_handler([RootPath], <<"open", Flags:32, Path/binary>>) ->
     FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
@@ -99,7 +101,8 @@ msg_handler([RootPath], <<"open", Flags:32, Path/binary>>) ->
             error_logger:info_msg("open Findex: ~p~n", [FIndex]),
             {ok, Reply};
         {error, _Reasor} ->
-            {ok, <<1:32>>}
+            %% TODO: get and send errno
+            {ok, <<-13:32>>} % EACCES = 13
     end;
 msg_handler([_RootPath], <<"read", FIndex:32, Offset:32, Size:32, _Path/binary>>) ->
     F = get(FIndex),
@@ -114,7 +117,8 @@ msg_handler([_RootPath], <<"read", FIndex:32, Offset:32, Size:32, _Path/binary>>
                 eof ->
                     {ok, <<0:32>>};
                 {error, _Reason} ->
-                    {ok, <<-1:32>>}
+                    %% TODO: get and send errno
+                    {ok, <<-11:32>>} % EAGAIN = 11
             end
     end;
 msg_handler([_RootPath], <<"write", FIndex:32, Offset:32, Size:32, Wbuf/binary>>) ->
@@ -127,7 +131,8 @@ msg_handler([_RootPath], <<"write", FIndex:32, Offset:32, Size:32, Wbuf/binary>>
                 ok ->
                     {ok, <<Size:32>>};
                 {error, _Reason} ->
-                    {ok, <<-1:32>>}
+                    %% TODO: get and send errno
+                    {ok, <<-11:32>>} % EAGAIN = 11
             end
     end;
 msg_handler([RootPath], <<"truncate", Newsize:32, Path/binary>>) ->
@@ -136,19 +141,21 @@ msg_handler([RootPath], <<"truncate", Newsize:32, Path/binary>>) ->
         ok ->
             {ok, <<0:32>>};
         {error, _Reason} ->
-            {ok, <<-1:32>>}
+            %% TODO: get and send errno
+            {ok, <<-13:32>>} % EACCES = 13
     end;
 msg_handler([_RootPath], <<"release", FIndex:32>>) ->
     F = get(FIndex),
     case F of
         undefined ->
-            {ok, <<-1:32>>};
+            {ok, <<-9:32>>}; % EBADF = 9
         _ ->
             case file:close(F) of
                 ok ->
                     {ok, <<0:32>>};
                 {error, _Reason} ->
-                    {ok, <<-1:32>>}
+                    %% TODO: get and send errno
+                    {ok, <<-9:32>>} % EBADF = 9
             end
     end;
 msg_handler(_RootPath, _) ->
