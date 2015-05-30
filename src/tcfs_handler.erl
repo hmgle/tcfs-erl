@@ -171,6 +171,16 @@ msg_handler([RootPath], <<"create", _Mode:32, Path/binary>>) ->
             %% TODO: get and send errno
             {ok, <<-13:32>>} % EACCES = 13
     end;
+msg_handler([RootPath], <<"utime", _Actime:64, _Modtime:64, Path/binary>>) ->
+    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    %% TODO: parse Actime and Modtime
+    case file:change_time(FixPath, erlang:localtime(), erlang:localtime()) of
+        ok ->
+            {ok, <<0:32>>};
+        {error, _Reasor} ->
+            %% TODO: get and send errno
+            {ok, <<-13:32>>} % EACCES = 13
+    end;
 msg_handler(_RootPath, _) ->
     {error, badmsg}.
 
