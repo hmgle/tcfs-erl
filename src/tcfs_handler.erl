@@ -158,6 +158,15 @@ msg_handler([_RootPath], <<"release", FIndex:32>>) ->
                     {ok, <<-9:32>>} % EBADF = 9
             end
     end;
+msg_handler([RootPath], <<"mkdir", _Mode:32, Path/binary>>) ->
+    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    case file:make_dir(FixPath) of
+        ok ->
+            {ok, <<0:32>>};
+        {error, _Reason} ->
+            %% TODO: get and send errno
+            {ok, <<-13:32>>} % EACCES = 13
+    end;
 msg_handler([RootPath], <<"create", _Mode:32, Path/binary>>) ->
     FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
     case file:open(FixPath, [raw, write, binary]) of
