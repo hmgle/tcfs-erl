@@ -112,7 +112,8 @@ msg_handler([_RootPath], <<"read", FIndex:32, Offset:32, Size:32, _Path/binary>>
         _ ->
             case file:pread(F, Offset, Size) of
                 {ok, Data} ->
-                    Reply = [<<Size:32>>, Data],
+                    Readed = byte_size(Data),
+                    Reply = [<<Readed:32>>, Data],
                     {ok, Reply};
                 eof ->
                     {ok, <<0:32>>};
