@@ -8,7 +8,7 @@
                    {active,    false},
                    {backlog,   10},
                    {nodelay,   true},
-                   {packet,    2},
+                   {packet,    4},
                    {reuseaddr, true}]).
 
 %% External API
@@ -29,11 +29,11 @@ start(RootPath) ->
 
 %% @doc The tcfs client process.
 tcfs_client(Socket, RootPath) ->
-    error_logger:info_msg("client()~n"),
+    %% error_logger:info_msg("client()~n"),
     ok = inet:setopts(Socket, [{active, once}]),
     receive
         {tcp, Socket, Data} ->
-            error_logger:info_msg("Got Data: ~p", [Data]),
+            %% error_logger:info_msg("Got Data: ~p", [Data]),
             case tcfs_handler:msg_handler(RootPath, Data) of
                 {ok, Reply} ->
                     gen_tcp:send(Socket, Reply);

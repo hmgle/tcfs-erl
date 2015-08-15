@@ -66,7 +66,7 @@ msg_handler([RootPath], <<"getattr", Path/binary>>) ->
     case file:read_file_info(FixPath) of
         %% TODO: get st_blksize, st_blocks
         {ok, FileInfo} ->
-            error_logger:info_msg("fileinfo: ~p", [FileInfo]),
+            %% error_logger:info_msg("fileinfo: ~p", [FileInfo]),
             #file_info{major_device=Dev, inode=Inode, mode=Mode, links=Nlink,
                       uid=Uid, gid=Gid, size=Size, atime=Atime, mtime=Mtime,
                       ctime=Ctime} = FileInfo,
@@ -98,7 +98,7 @@ msg_handler([RootPath], <<"open", Flags:32, Path/binary>>) ->
             FIndex = gen_fd_index(),
             put(FIndex, F),
             Reply = [<<0:32>>, <<FIndex:32>>],
-            error_logger:info_msg("open Findex: ~p~n", [FIndex]),
+            %% error_logger:info_msg("open Findex: ~p~n", [FIndex]),
             {ok, Reply};
         {error, _Reasor} ->
             %% TODO: get and send errno
@@ -193,7 +193,7 @@ msg_handler([RootPath], <<"create", _Mode:32, Path/binary>>) ->
             FIndex = gen_fd_index(),
             put(FIndex, F),
             Reply = [<<0:32>>, <<FIndex:32>>],
-            error_logger:info_msg("create Findex: ~p~n", [FIndex]),
+            %% error_logger:info_msg("create Findex: ~p~n", [FIndex]),
             {ok, Reply};
         {error, _Reasor} ->
             %% TODO: get and send errno
