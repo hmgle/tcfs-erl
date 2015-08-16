@@ -62,7 +62,7 @@ datetime_to_epoch_time(DateTime) ->
 
 %% FIXME: check FixPath is the subdir of RootPath
 msg_handler([RootPath], <<"getattr", Path/binary>>) ->
-    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     case file:read_file_info(FixPath) of
         %% TODO: get st_blksize, st_blocks
         {ok, FileInfo} ->
@@ -80,18 +80,18 @@ msg_handler([RootPath], <<"getattr", Path/binary>>) ->
             {ok, <<-2:32>>} % ENOENT = 2
     end;
 msg_handler([RootPath], <<"readdir", Path/binary>>) ->
-    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     case file:list_dir_all(FixPath) of
         {ok, Filenames} ->
             FileLists = lists:flatmap(fun(F) -> F ++ "\0" end, Filenames),
-            Reply = [<<0:32>>, FileLists],
+            Reply = [<<0:32>>, unicode:characters_to_binary(FileLists)],
             {ok, Reply};
         {error, _Reason} ->
             %% TODO: get and send errno
             {ok, <<-9:32>>} % EBADF = 9
     end;
 msg_handler([RootPath], <<"open", Flags:32, Path/binary>>) ->
-    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     Modes = parse_open_modes(Flags),
     case file:open(FixPath, Modes) of
         {ok, F} ->
@@ -137,7 +137,7 @@ msg_handler([_RootPath], <<"write", FIndex:32, Offset:32, Size:32, Wbuf/binary>>
             end
     end;
 msg_handler([RootPath], <<"truncate", Newsize:32, Path/binary>>) ->
-    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     case ?MODULE:truncate(FixPath, Newsize) of
         ok ->
             {ok, <<0:32>>};
@@ -160,7 +160,7 @@ msg_handler([_RootPath], <<"release", FIndex:32>>) ->
             end
     end;
 msg_handler([RootPath], <<"mkdir", _Mode:32, Path/binary>>) ->
-    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     case file:make_dir(FixPath) of
         ok ->
             {ok, <<0:32>>};
@@ -169,7 +169,7 @@ msg_handler([RootPath], <<"mkdir", _Mode:32, Path/binary>>) ->
             {ok, <<-13:32>>} % EACCES = 13
     end;
 msg_handler([RootPath], <<"rmdir", Path/binary>>) ->
-    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     case file:del_dir(FixPath) of
         ok ->
             {ok, <<0:32>>};
@@ -178,7 +178,7 @@ msg_handler([RootPath], <<"rmdir", Path/binary>>) ->
             {ok, <<-13:32>>} % EACCES = 13
     end;
 msg_handler([RootPath], <<"unlink", Path/binary>>) ->
-    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     case file:delete(FixPath) of
         ok ->
             {ok, <<0:32>>};
@@ -187,7 +187,7 @@ msg_handler([RootPath], <<"unlink", Path/binary>>) ->
             {ok, <<-13:32>>} % EACCES = 13
     end;
 msg_handler([RootPath], <<"create", _Mode:32, Path/binary>>) ->
-    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     case file:open(FixPath, [raw, write, binary]) of
         {ok, F} ->
             FIndex = gen_fd_index(),
@@ -200,7 +200,7 @@ msg_handler([RootPath], <<"create", _Mode:32, Path/binary>>) ->
             {ok, <<-13:32>>} % EACCES = 13
     end;
 msg_handler([RootPath], <<"utime", _Actime:64, _Modtime:64, Path/binary>>) ->
-    FixPath = atom_to_list(RootPath) ++ binary_to_list(Path),
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     %% TODO: parse Actime and Modtime
     case file:change_time(FixPath, erlang:localtime(), erlang:localtime()) of
         ok ->
