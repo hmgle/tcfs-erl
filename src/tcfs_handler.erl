@@ -124,6 +124,15 @@ msg_handler([RootPath], <<"mkdir", _Mode:32, Path/binary>>) ->
             %% TODO: get and send errno
             {ok, <<-13:32>>} % EACCES = 13
     end;
+msg_handler([RootPath], <<"chmod", Mode:32, Path/binary>>) ->
+    FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
+    case file:change_mode(FixPath, Mode) of
+        ok ->
+            {ok, <<0:32>>};
+        {error, _Reason} ->
+            %% TODO: get and send errno
+            {ok, <<-13:32>>} % EACCES = 13
+    end;
 msg_handler([RootPath], <<"rmdir", Path/binary>>) ->
     FixPath = atom_to_list(RootPath) ++ unicode:characters_to_list(Path),
     case file:del_dir(FixPath) of
