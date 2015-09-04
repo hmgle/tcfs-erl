@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/hmgle/tcfs-erl.png?branch=master)](https://travis-ci.org/hmgle/tcfs-erl)
 
-TCFS, a Toy Cloud File System.
+TCFS, a Lightweight Network File System.
 
 Tcfs-erl is the tcfs server writen in Erlang.
 
