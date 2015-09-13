@@ -21,7 +21,7 @@ make run
 
 ```
 sudo apt-get install libfuse-dev
-git clone https://github.com/hmgle/tcfs.git
+git clone https://github.com/tcfs/tcfs.git
 cd tcfs
 mkdir mountpoint
 make
